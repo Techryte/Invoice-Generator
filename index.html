@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Export Invoice Builder</title>
+<meta name="description" content="Free invoice generator for Indian freelancers billing foreign clients: zero-rated export invoices with live preview and PDF download. Your data stays in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<style>
+:root{
+  --ground:#eceff3; --panel:#ffffff; --ink:#1b2130; --muted:#5a6477; --rule:#d5dbe4;
+  --field:#f7f8fa; --accent:#1f5f8b; --accent-ink:#ffffff; --accent-soft:#e3edf5;
+  --danger:#a8322d; --ok:#2e6b3f;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Schibsted Grotesk","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#12161d; --panel:#1a2029; --ink:#e6e9ef; --muted:#9aa4b5; --rule:#2c3440;
+    --field:#212833; --accent:#6aa9d6; --accent-ink:#0d1a24; --accent-soft:#1d2f3d;
+    --danger:#e27a73; --ok:#7cc48f;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#12161d; --panel:#1a2029; --ink:#e6e9ef; --muted:#9aa4b5; --rule:#2c3440;
+  --field:#212833; --accent:#6aa9d6; --accent-ink:#0d1a24; --accent-soft:#1d2f3d;
+  --danger:#e27a73; --ok:#7cc48f;
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+img{max-width:100%}[hidden]{display:none!important}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:20px 40px}
+.app{max-width:1380px;margin:0 auto;display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:980px){.app{grid-template-columns:minmax(0,1fr)}}
+header.top{max-width:1380px;margin:0 auto 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+header.top h1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+header.top p{margin:4px 0 0;color:var(--muted);max-width:60ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-weight:500;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary:hover{filter:brightness(1.08)}
+button.link{border:none;background:none;color:var(--accent);padding:4px 0}
+button.icon{padding:6px 9px;line-height:1;color:var(--muted)}
+button:disabled{opacity:.55;cursor:default}
+.status{font-size:13px;color:var(--muted);min-height:1em}
+.status.ok{color:var(--ok)} .status.err{color:var(--danger)}
+
+/* form */
+.form{display:flex;flex-direction:column;gap:14px}
+fieldset{border:1px solid var(--rule);background:var(--panel);border-radius:8px;margin:0;padding:14px 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;min-width:0}
+legend{font-family:var(--display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);padding:0 6px;margin-left:-6px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.full{grid-column:1/-1}
+label{font-size:12px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:5px;padding:7px 9px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:58px}
+.hint{grid-column:1/-1;font-size:12px;color:var(--muted);margin:0}
+.check{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:13px}
+.check input{width:auto}
+@media (max-width:420px){fieldset{grid-template-columns:1fr}}
+
+.items{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--rule);border-radius:6px;padding:10px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;background:var(--field)}
+.item .desc{grid-column:1/-1}
+.item input,.item select{background:var(--panel)}
+.item .amt{grid-column:1/-2;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* preview */
+.preview{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (max-width:980px){.preview{position:static}}
+.preview-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.preview-bar span{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.frame{width:100%;overflow:hidden;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 8px 28px rgba(20,30,50,.12)}
+.frame-inner{transform-origin:top left;width:794px}
+
+/* invoice paper — always light, it is a printed document */
+.inv{width:794px;min-height:1123px;background:#fff;color:#1b2130;padding:56px 60px 48px;font-family:var(--sans);font-size:12.5px;line-height:1.5;display:flex;flex-direction:column;gap:26px}
+.inv .head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.inv .who h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0 0 2px;letter-spacing:-.01em;color:#1b2130}
+.inv .who .role{color:#1f5f8b;font-weight:600;margin-bottom:8px}
+.inv .who div,.inv .billto div{white-space:pre-line}
+.inv .muted{color:#5a6477}
+.inv .title{text-align:right}
+.inv .title h1{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.14em;margin:0 0 10px;color:#1f5f8b}
+.inv table.meta{border-collapse:collapse;margin-left:auto}
+.inv table.meta td{padding:2px 0 2px 16px;text-align:right;white-space:nowrap}
+.inv table.meta td:first-child{color:#5a6477}
+.inv table.meta td:last-child{font-family:var(--mono);font-size:12px}
+.inv .ids{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;margin-top:8px}
+.inv .ids b{font-weight:600;color:#5a6477;margin-right:4px}
+.inv .ids span{font-family:var(--mono)}
+.inv .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:#5a6477;font-weight:600;margin-bottom:6px}
+.inv .parties{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;padding:16px 0;border-top:2px solid #1b2130;border-bottom:1px solid #d5dbe4}
+.inv .billto strong{font-size:14px}
+.inv table.lines{width:100%;border-collapse:collapse}
+.inv table.lines th{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#5a6477;font-weight:600;text-align:left;padding:0 8px 8px;border-bottom:1px solid #1b2130}
+.inv table.lines td{padding:10px 8px;border-bottom:1px solid #e3e7ed;vertical-align:top}
+.inv table.lines th:first-child,.inv table.lines td:first-child{padding-left:0}
+.inv table.lines th:last-child,.inv table.lines td:last-child{padding-right:0}
+.inv .r{text-align:right;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.inv .c{font-family:var(--mono);font-size:12px}
+.inv .totals{display:flex;justify-content:flex-end}
+.inv .totals table{border-collapse:collapse;min-width:300px}
+.inv .totals td{padding:5px 0}
+.inv .totals td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-left:24px}
+.inv .totals tr.grand td{border-top:2px solid #1b2130;padding-top:9px;font-weight:600;font-size:14px}
+.inv .totals tr.grand td:last-child{color:#1f5f8b}
+.inv .words{margin-top:-12px;text-align:right;font-style:italic;color:#5a6477}
+.inv .decl{background:#f1f5f9;border-left:3px solid #1f5f8b;padding:10px 14px;display:flex;flex-direction:column;gap:3px}
+.inv .pay{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.inv .pay dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
+.inv .pay dt{color:#5a6477}
+.inv .pay dd{margin:0;font-family:var(--mono);font-size:11.5px;word-break:break-word}
+.inv .note{white-space:pre-line}
+.inv .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding-top:18px;border-top:1px solid #d5dbe4;font-size:11px;color:#5a6477}
+.inv .sign{text-align:right;min-width:200px}
+.inv .sign .line{border-top:1px solid #1b2130;margin-top:34px;padding-top:4px;color:#1b2130}
+.inv .ph{color:#b24a2f}
+#capture{position:fixed;left:-12000px;top:0}
+.sitefoot{max-width:1380px;margin:28px auto 0;font-size:12px;color:var(--muted)}
+.sitefoot a{color:var(--accent)}
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff;padding:0}
+  header.top,.form,.preview-bar,.sitefoot,#capture{display:none!important}
+  .app{display:block;max-width:none}
+  .preview{position:static}
+  .frame{box-shadow:none;border-radius:0;height:auto!important;overflow:visible}
+  .frame-inner{transform:none!important}
+  .inv{min-height:0;zoom:.97;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .inv .ph{color:inherit}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Export Invoice Builder</h1>
+    <p>For Indian freelancers and consultants billing clients abroad. Fill in the form and the invoice updates beside it. Everything you type stays in this browser and is never uploaded.</p>
+  </div>
+  <div class="actions">
+    <button type="button" id="newInv">Next invoice</button>
+    <button type="button" id="resetAll" class="link">Clear saved data</button>
+  </div>
+</header>
+
+<main class="app">
+<form class="form" id="form" autocomplete="off">
+
+  <fieldset>
+    <legend>You</legend>
+    <div class="f full"><label for="s_name">Full name</label><input id="s_name" data-k="s_name"></div>
+    <div class="f full"><label for="s_role">Title</label><input id="s_role" data-k="s_role"></div>
+    <div class="f full"><label for="s_addr">Address</label><textarea id="s_addr" data-k="s_addr" rows="3"></textarea></div>
+    <div class="f"><label for="s_email">Email</label><input id="s_email" data-k="s_email" type="email"></div>
+    <div class="f"><label for="s_phone">Phone</label><input id="s_phone" data-k="s_phone"></div>
+    <div class="f"><label for="s_pan">PAN</label><input id="s_pan" data-k="s_pan" maxlength="10" style="text-transform:uppercase"></div>
+    <div class="f"><label for="s_gstin">GSTIN (optional)</label><input id="s_gstin" data-k="s_gstin" maxlength="15" style="text-transform:uppercase"></div>
+    <div class="f" data-gst><label for="s_lut">LUT ARN</label><input id="s_lut" data-k="s_lut"></div>
+    <div class="f" data-gst><label for="s_lutdate">LUT date</label><input id="s_lutdate" data-k="s_lutdate" type="date"></div>
+    <p class="hint">Leave GSTIN empty if you aren't GST-registered; the invoice then says so instead of quoting an LUT.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Client</legend>
+    <div class="f full"><label for="c_name">Company</label><input id="c_name" data-k="c_name"></div>
+    <div class="f"><label for="c_idlabel">Company ID type</label><input id="c_idlabel" data-k="c_idlabel" list="idtypes"></div>
+    <div class="f"><label for="c_abn">Company ID</label><input id="c_abn" data-k="c_abn"></div>
+    <datalist id="idtypes"><option value="ACN"></option><option value="ABN"></option><option value="Company No."></option><option value="VAT No."></option><option value="EIN"></option></datalist>
+    <div class="f full"><label for="c_addr">Address</label><textarea id="c_addr" data-k="c_addr" rows="3"></textarea></div>
+    <div class="f full"><label for="c_country">Country</label><input id="c_country" data-k="c_country"></div>
+    <p class="hint">Leave Company ID empty to hide it. Country is used for the place of supply line.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Invoice</legend>
+    <div class="f"><label for="i_no">Invoice number</label><input id="i_no" data-k="i_no"></div>
+    <div class="f"><label for="i_cur">Currency</label>
+      <select id="i_cur" data-k="i_cur"><option>AUD</option><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option><option>NZD</option><option>SGD</option><option>AED</option></select></div>
+    <div class="f"><label for="i_date">Invoice date</label><input id="i_date" data-k="i_date" type="date"></div>
+    <div class="f"><label for="i_terms">Payment terms</label>
+      <select id="i_terms" data-k="i_terms"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">On receipt</option></select></div>
+    <div class="f"><label for="i_from">Service from</label><input id="i_from" data-k="i_from" type="date"></div>
+    <div class="f"><label for="i_to">Service to</label><input id="i_to" data-k="i_to" type="date"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Services</legend>
+    <div class="items" id="items"></div>
+    <div class="f full"><button type="button" id="addItem">Add line</button></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Payment</legend>
+    <label class="check"><input type="checkbox" id="p_useA" data-k="p_useA">Indian bank account (SWIFT)</label>
+    <div class="f full" data-pa><label for="p_aname">Account name</label><input id="p_aname" data-k="p_aname"></div>
+    <div class="f full" data-pa><label for="p_bank">Bank and branch</label><input id="p_bank" data-k="p_bank"></div>
+    <div class="f full" data-pa><label for="p_acc">Account number</label><input id="p_acc" data-k="p_acc"></div>
+    <div class="f" data-pa><label for="p_ifsc">IFSC</label><input id="p_ifsc" data-k="p_ifsc" style="text-transform:uppercase"></div>
+    <div class="f" data-pa><label for="p_swift">SWIFT / BIC</label><input id="p_swift" data-k="p_swift" style="text-transform:uppercase"></div>
+    <label class="check"><input type="checkbox" id="p_useB" data-k="p_useB">Local account in the client’s country (Wise, Skydo…)</label>
+    <div class="f full" data-pb><label for="p_prov">Provider</label><input id="p_prov" data-k="p_prov"></div>
+    <div class="f" data-pb><label for="p_bsb">BSB / sort / routing code</label><input id="p_bsb" data-k="p_bsb"></div>
+    <div class="f" data-pb><label for="p_bacc">Account number</label><input id="p_bacc" data-k="p_bacc"></div>
+    <div class="f full"><label for="p_note">Note to client (optional)</label><textarea id="p_note" data-k="p_note" rows="2"></textarea></div>
+  </fieldset>
+</form>
+
+<section class="preview" aria-label="Invoice preview">
+  <div class="preview-bar">
+    <span>Preview · A4</span>
+    <div class="actions">
+      <span class="status" id="status" role="status"></span>
+      <button type="button" id="printBtn">Print</button>
+      <button type="button" class="primary" id="pdfBtn">Download PDF</button>
+    </div>
+  </div>
+  <div class="frame" id="frame"><div class="frame-inner" id="frameInner"><div class="inv" id="inv"></div></div></div>
+</section>
+</main>
+<footer class="sitefoot">Not tax advice: check GST and income-tax treatment with a CA. Data is stored only in your browser’s local storage. <a href="https://github.com/Techryte/Invoice-Generator" rel="noopener">Source on GitHub</a>.</footer>
+<div id="capture" aria-hidden="true"></div>
+
+<script src="vendor/html2canvas.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script>
+(function(){
+const STORE='export-invoice-web-v1';
+const $=id=>document.getElementById(id);
+const today=new Date();
+const iso=d=>d.toISOString().slice(0,10);
+const firstOfMonth=new Date(Date.UTC(today.getFullYear(),today.getMonth(),1));
+const lastOfMonth=new Date(Date.UTC(today.getFullYear(),today.getMonth()+1,0));
+function fyLabel(d){const y=d.getFullYear(),m=d.getMonth();const s=m>=3?y:y-1;return s+'-'+String((s+1)%100).padStart(2,'0');}
+
+const defaults={
+  s_name:'Your Name', s_role:'Independent Software Developer & Consultant',
+  s_addr:'[Street address]\n[City], [State] [PIN]\nIndia', s_email:'you@example.com', s_phone:'+91 [phone]',
+  s_pan:'ABCDE1234F', s_gstin:'', s_lut:'', s_lutdate:'',
+  c_name:'Client Company Pty Ltd', c_idlabel:'ACN', c_abn:'123 456 789',
+  c_addr:'[Street address]\n[Suburb] NSW [Postcode]', c_country:'Australia',
+  i_no:fyLabel(today)+'/001', i_cur:'AUD', i_date:iso(today), i_terms:'14', i_from:iso(firstOfMonth), i_to:iso(lastOfMonth),
+  p_useA:true, p_aname:'[Name as per bank]', p_bank:'[Bank], [Branch]', p_acc:'[Account number]', p_ifsc:'ABCD0001234', p_swift:'ABCDINBBXXX',
+  p_useB:false, p_prov:'Wise', p_bsb:'', p_bacc:'',
+  p_note:'Please quote the invoice number as the payment reference.',
+  items:[
+    {desc:'Mobile app development (example line)',sac:'998314',qty:80,rate:95},
+    {desc:'Technical consulting and code review (example line)',sac:'998313',qty:6,rate:95}
+  ]
+};
+
+let state=load();
+function load(){
+  try{const raw=localStorage.getItem(STORE);if(raw){const st=Object.assign({},defaults,JSON.parse(raw));return st;}}catch(e){}
+  return JSON.parse(JSON.stringify(defaults));
+}
+let saveT;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}},300);}
+
+/* bind simple fields */
+document.querySelectorAll('[data-k]').forEach(el=>{
+  const k=el.dataset.k;
+  if(el.type==='checkbox'){el.checked=!!state[k];}else{el.value=state[k]??'';}
+  el.addEventListener('input',()=>{state[k]=el.type==='checkbox'?el.checked:el.value;save();render();});
+  el.addEventListener('change',()=>{state[k]=el.type==='checkbox'?el.checked:el.value;save();render();});
+});
+
+/* line items */
+const itemsEl=$('items');
+function drawItems(){
+  itemsEl.innerHTML='';
+  state.items.forEach((it,i)=>{
+    const row=document.createElement('div');row.className='item';
+    row.innerHTML=
+      '<div class="f desc"><label for="it_d'+i+'">Description</label><input id="it_d'+i+'"></div>'+
+      '<div class="f"><label for="it_s'+i+'">SAC</label><select id="it_s'+i+'"><option value="998314">998314 · Dev</option><option value="998313">998313 · Consulting</option><option value="998315">998315 · Hosting</option></select></div>'+
+      '<div class="f"><label for="it_q'+i+'">Hours / qty</label><input id="it_q'+i+'" class="num" inputmode="decimal"></div>'+
+      '<div class="f"><label for="it_r'+i+'">Rate</label><input id="it_r'+i+'" class="num" inputmode="decimal"></div>'+
+      '<button type="button" class="icon" aria-label="Remove line '+(i+1)+'">✕</button>'+
+      '<div class="amt" id="it_a'+i+'"></div>';
+    itemsEl.appendChild(row);
+    const d=row.querySelector('#it_d'+i),s=row.querySelector('#it_s'+i),q=row.querySelector('#it_q'+i),r=row.querySelector('#it_r'+i);
+    d.value=it.desc;s.value=it.sac;q.value=it.qty;r.value=it.rate;
+    d.oninput=()=>{it.desc=d.value;save();render();};
+    s.onchange=()=>{it.sac=s.value;save();render();};
+    q.oninput=()=>{it.qty=q.value;save();render();};
+    r.oninput=()=>{it.rate=r.value;save();render();};
+    row.querySelector('button').onclick=()=>{state.items.splice(i,1);if(!state.items.length)state.items.push({desc:'',sac:'998314',qty:1,rate:0});save();drawItems();render();};
+  });
+}
+$('addItem').onclick=()=>{state.items.push({desc:'',sac:'998314',qty:1,rate:state.items.at(-1)?.rate||0});save();drawItems();render();$('it_d'+(state.items.length-1)).focus();};
+
+/* helpers */
+const num=v=>{const n=parseFloat(String(v).replace(/,/g,''));return isFinite(n)?n:0;};
+const money=n=>n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmtDate(v){if(!v)return '';const d=new Date(v+'T00:00:00');if(isNaN(d))return v;return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function addDays(v,n){const d=new Date(v+'T00:00:00');if(isNaN(d))return '';d.setDate(d.getDate()+n);return iso(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));}
+const CUR={AUD:['Australian dollars','cents','A$'],USD:['US dollars','cents','US$'],EUR:['euros','cents','€'],GBP:['pounds sterling','pence','£']};
+const ONES=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function under1000(n){let s='';if(n>=100){s+=ONES[Math.floor(n/100)]+' hundred';n%=100;if(n)s+=' and ';}if(n>=20){s+=TENS[Math.floor(n/10)];if(n%10)s+='-'+ONES[n%10];}else if(n)s+=ONES[n];return s;}
+function words(n){if(n===0)return 'zero';const parts=[];const units=[[1e9,'billion'],[1e6,'million'],[1e3,'thousand']];for(const [v,w] of units){if(n>=v){parts.push(under1000(Math.floor(n/v))+' '+w);n%=v;}}if(n)parts.push(under1000(n));return parts.join(' ');}
+function amountWords(total,cur){const c=CUR[cur]||[cur,'cents'];const whole=Math.floor(total+1e-9);const cents=Math.round((total-whole)*100);let s=words(whole)+' '+c[0];if(cents)s+=' and '+words(cents)+' '+c[1];s=s.charAt(0).toUpperCase()+s.slice(1);return s+' only';}
+const v=(x,ph)=>x&&String(x).trim()?esc(x):'<span class="ph">'+esc(ph)+'</span>';
+
+/* render invoice */
+function render(){
+  const s=state, reg=!!(s.s_gstin&&s.s_gstin.trim());
+  document.querySelectorAll('[data-gst]').forEach(e=>e.hidden=!reg);
+  document.querySelectorAll('[data-pa]').forEach(e=>e.hidden=!s.p_useA);
+  document.querySelectorAll('[data-pb]').forEach(e=>e.hidden=!s.p_useB);
+  const cur=s.i_cur||'AUD';
+  let sub=0;
+  const rows=s.items.map((it,i)=>{
+    const amt=num(it.qty)*num(it.rate);sub+=amt;
+    const a=$('it_a'+i);if(a)a.textContent='Line total: '+cur+' '+money(amt);
+    return '<tr><td>'+(i+1)+'</td><td>'+v(it.desc,'Description')+'</td><td class="c">'+esc(it.sac)+'</td><td class="r">'+esc(num(it.qty))+'</td><td class="r">'+money(num(it.rate))+'</td><td class="r">'+money(amt)+'</td></tr>';
+  }).join('');
+  const due=s.i_terms==='0'?s.i_date:addDays(s.i_date,parseInt(s.i_terms,10)||0);
+  const period=(s.i_from||s.i_to)?fmtDate(s.i_from)+' – '+fmtDate(s.i_to):'';
+  const decl=reg
+    ? 'Supply meant for export of services under LUT without payment of IGST. LUT ARN: '+v(s.s_lut,'[ARN]')+(s.s_lutdate?' dated '+esc(fmtDate(s.s_lutdate)):'')+'.'
+    : 'Export of services. Supplier not registered under GST in India.';
+  let pay='';
+  if(s.p_useA){pay+='<div><div class="lbl">Bank transfer (SWIFT)</div><dl><dt>Account name</dt><dd>'+v(s.p_aname,'—')+'</dd><dt>Bank</dt><dd>'+v(s.p_bank,'—')+'</dd><dt>Account no.</dt><dd>'+v(s.p_acc,'—')+'</dd><dt>IFSC</dt><dd>'+v((s.p_ifsc||'').toUpperCase(),'—')+'</dd><dt>SWIFT/BIC</dt><dd>'+v((s.p_swift||'').toUpperCase(),'—')+'</dd></dl></div>';}
+  if(s.p_useB){pay+='<div><div class="lbl">Local transfer'+(s.c_country?' in '+esc(s.c_country):'')+(s.p_prov?' ('+esc(s.p_prov)+')':'')+'</div><dl><dt>Account name</dt><dd>'+v(s.p_aname||s.s_name,'—')+'</dd><dt>'+(s.c_country==='Australia'?'BSB':'Bank code')+'</dt><dd>'+v(s.p_bsb,'—')+'</dd><dt>Account no.</dt><dd>'+v(s.p_bacc,'—')+'</dd></dl></div>';}
+  const html=
+  '<div class="head"><div class="who"><h2>'+v(s.s_name,'Your name')+'</h2><div class="role">'+esc(s.s_role)+'</div><div>'+v(s.s_addr,'Address')+'</div><div class="muted">'+esc([s.s_email,s.s_phone].filter(Boolean).join('  ·  '))+'</div>'+
+    '<div class="ids"><span><b>PAN</b>'+v((s.s_pan||'').toUpperCase(),'—')+'</span>'+(reg?'<span><b>GSTIN</b>'+esc(s.s_gstin.toUpperCase())+'</span>':'')+'</div></div>'+
+  '<div class="title"><h1>'+(reg?'TAX INVOICE':'INVOICE')+'</h1><table class="meta"><tr><td>Invoice no.</td><td>'+v(s.i_no,'—')+'</td></tr><tr><td>Date</td><td>'+esc(fmtDate(s.i_date))+'</td></tr><tr><td>Due</td><td>'+esc(s.i_terms==='0'?'On receipt':fmtDate(due))+'</td></tr><tr><td>Currency</td><td>'+esc(cur)+'</td></tr></table></div></div>'+
+  '<div class="parties"><div class="billto"><div class="lbl">Bill to</div><strong>'+v(s.c_name,'Client company')+'</strong>'+(s.c_abn?'<div class="muted">'+esc(s.c_idlabel||'Company ID')+' '+esc(s.c_abn)+'</div>':'')+'<div>'+esc(s.c_addr)+(s.c_country?'\n'+esc(s.c_country):'')+'</div></div>'+
+  '<div><div class="lbl">Details</div><div>Service period: '+(period?esc(period):'—')+'</div><div>Place of supply: Outside India'+(s.c_country?' ('+esc(s.c_country)+')':'')+'</div></div></div>'+
+  '<table class="lines"><thead><tr><th style="width:24px">#</th><th>Description</th><th>SAC</th><th class="r">Hours / qty</th><th class="r">Rate</th><th class="r">Amount ('+esc(cur)+')</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<div class="totals"><table><tr><td>Subtotal</td><td>'+money(sub)+'</td></tr><tr><td>IGST @ 0% (zero-rated export)</td><td>0.00</td></tr><tr class="grand"><td>Total due</td><td>'+esc(cur)+' '+money(sub)+'</td></tr></table></div>'+
+  '<div class="words">'+esc(amountWords(Math.round(sub*100)/100,cur))+'</div>'+
+  '<div class="decl"><div class="lbl" style="margin:0">Declaration</div><div>'+decl+'</div><div>No local GST/VAT charged; supplier is not registered for indirect tax in '+esc(s.c_country||'the client\u2019s country')+'.</div></div>'+
+  (pay?'<div class="pay">'+pay+'</div>':'')+
+  (s.p_note?'<div class="note muted">'+esc(s.p_note)+' Purpose of remittance: software consulting services (P0802).</div>':'<div class="note muted">Purpose of remittance: software consulting services (P0802).</div>')+
+  '<div class="foot"><div>Invoice '+esc(s.i_no)+'</div><div class="sign"><div class="line">'+v(s.s_name,'Your name')+'</div></div></div>';
+  $('inv').innerHTML=html;
+  fit();
+}
+
+/* scale preview to frame */
+function fit(){
+  const w=$('frame').clientWidth;const sc=Math.min(1,w/794);
+  $('frameInner').style.transform='scale('+sc+')';
+  $('frame').style.height=($('inv').offsetHeight*sc)+'px';
+}
+new ResizeObserver(fit).observe($('frame'));
+
+/* next invoice */
+function bumpNumber(n){const m=String(n).match(/^(.*?)(\d+)(\D*)$/);if(!m)return n;return m[1]+String(parseInt(m[2],10)+1).padStart(m[2].length,'0')+m[3];}
+$('newInv').onclick=()=>{
+  state.i_no=bumpNumber(state.i_no);state.i_date=iso(new Date());
+  state.items=state.items.map(it=>({desc:it.desc.replace(' (example line)',''),sac:it.sac,qty:0,rate:it.rate}));
+  ['i_no','i_date'].forEach(k=>$(k).value=state[k]);
+  save();drawItems();render();setStatus('Started '+state.i_no+'. Hours reset to 0.','ok');
+};
+let armed=false;
+$('resetAll').onclick=()=>{
+  if(!armed){armed=true;$('resetAll').textContent='Tap again to clear everything';setTimeout(()=>{armed=false;$('resetAll').textContent='Clear saved data';},4000);return;}
+  try{localStorage.removeItem(STORE);}catch(e){}
+  state=JSON.parse(JSON.stringify(defaults));
+  document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;if(el.type==='checkbox')el.checked=!!state[k];else el.value=state[k]??'';});
+  armed=false;$('resetAll').textContent='Clear saved data';drawItems();render();setStatus('Saved data cleared.','ok');
+};
+
+function setStatus(t,cls){const el=$('status');el.textContent=t;el.className='status'+(cls?' '+cls:'');}
+
+/* PDF and print */
+const btn=$('pdfBtn');
+$('printBtn').onclick=()=>window.print();
+btn.onclick=async()=>{
+  btn.disabled=true;setStatus('Building PDF…');
+  const cap=$('capture');cap.innerHTML='';const clone=$('inv').cloneNode(true);clone.removeAttribute('id');clone.querySelectorAll('.ph').forEach(p=>p.classList.remove('ph'));cap.appendChild(clone);
+  try{
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const canvas=await html2canvas(clone,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({unit:'pt',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    const pxPerPage=Math.floor(canvas.width*ph/pw);
+    let y=0,first=true;
+    if(canvas.height<=pxPerPage*1.2){
+      const scale=Math.min(pw/canvas.width,ph/canvas.height);
+      const w=canvas.width*scale,h=canvas.height*scale;
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',(pw-w)/2,0,w,h);
+      y=canvas.height;
+    }
+    while(canvas.height-y>pxPerPage*0.02){
+      const h=Math.min(pxPerPage,canvas.height-y);
+      const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=h;
+      slice.getContext('2d').drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+      if(!first)pdf.addPage();
+      pdf.addImage(slice.toDataURL('image/jpeg',0.95),'JPEG',0,0,pw,h*pw/canvas.width);
+      first=false;y+=h;
+    }
+    const blob=pdf.output('blob');
+    const name='Invoice-'+String(state.i_no||'draft').replace(/[^\w-]+/g,'-')+'.pdf';
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    setStatus('Downloaded '+name+'.','ok');
+  }catch(e){
+    console.error(e);setStatus('Couldn’t build the PDF. Try Print and choose Save as PDF instead.','err');
+  }finally{cap.innerHTML='';btn.disabled=false;}
+};
+
+drawItems();render();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>
